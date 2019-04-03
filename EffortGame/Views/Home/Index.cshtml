@@ -1,0 +1,137 @@
+﻿
+<style>
+    input, button, .alert-success {
+        margin-top: 10px;
+        margin-bottom: 10px;
+    }
+</style>
+<div id="voteButtonModal" style="display:none"><button type="button" class="btn btn-primary btn-lg btn-block" onclick="StartVote();">Start Vote</button></div>
+<div class="alert alert-success" id="informationBox" style="display:none">10</div>
+<div id="inputModal">
+    <input id="roomname" class="form-control" type="text" placeholder="Room Name" autocomplete="off" />
+    <input id="username" class="form-control" type="text" placeholder="User Name" autocomplete="off" />
+    <button id="enter" class="btn btn-primary btn-lg btn-block" onclick="enterClick();">Enter</button>
+</div>
+<div id="voteModal" style="display:none"></div>
+<div id="userListModal" style="display:none"> </div>
+
+<script>
+    var UserKey;
+    var users = new Array();
+
+    function ShowModal(modalId)
+    {
+        document.getElementById("inputModal").style.display = "none";
+        document.getElementById("voteModal").style.display = "none";
+        document.getElementById("userListModal").style.display = "none";
+
+        document.getElementById(modalId).style.display = "block";
+    }
+    var socket;
+    var roomName;
+    var userName;
+    var IsVoteable = false;
+    function enterClick()
+    {
+        roomName = document.getElementById("roomname").value.toLowerCase();
+        userName = document.getElementById("username").value;
+        if (roomName.length > 0 && userName.length > 0)
+        {
+            var url = document.location.host.toString();
+            socket = new WebSocket("ws://" + url + "/ws");
+            socket.onopen = function (event) {
+            }
+            socket.onmessage = function (evt) {
+                var message = JSON.parse(evt.data);
+
+                switch (message.Command) {
+                    case "StartVote":
+                        IsVoteable = true;
+                        document.getElementById("informationBox").style.display = "block";
+                        CreateVoteButtons();
+                        ShowModal("voteModal");
+                        users = new Array();
+                        second = 10;
+                        timer();
+                        break;
+                    case "Vote":
+                        var user = { UserKey : message.UserKey, User : message.User, Vote : message.Value };
+                        users.push(user);
+                        break;
+                    case "Connected":
+                        UserKey = message.Value;
+                        socket.send(JSON.stringify({ Room: roomName, User: userName, Command: "Connect", Value: "" }));
+                        document.getElementById("voteButtonModal").style.display = "block";
+                        ShowModal("userListModal");
+                        break;
+
+                }
+            }
+
+        }
+        else
+        {
+            alert("input room name and user name");
+        }
+    }
+    function RefreshUserList()
+    {
+        var text = "<ul class='list-group'>";
+        var total = 0;
+        var orderList = users.sort((a, b) => (parseInt(a.Vote) < parseInt(b.Vote)) ? 1 : ((parseInt(b.Vote) < parseInt(a.Vote)) ? -1 : 0));
+        for (var i = 0; i < orderList.length; i++)
+        {
+            total += parseInt(orderList[i].Vote);
+            text += " <li class='list-group-item'>" + orderList[i].User + " : " + orderList[i].Vote+"</li> ";
+        }
+        text += "</ul>";
+        document.getElementById("userListModal").innerHTML = text;
+
+        document.getElementById("informationBox").innerHTML = "Average : " + total / orderList.length;
+        ShowModal("userListModal");
+    }
+    function CreateVoteButtons()
+    {
+        var last = 1;
+        var next = 2;
+        var text = "";
+        for (var i = 0; i < 10; i++) {
+            var temp = last;
+            text += "<button class='btn btn-primary btn-lg btn-block' onclick='Vote(" + temp + ",this);'>" + temp + "</button>";
+            last = next;
+            next = temp + last;
+        }
+        document.getElementById("voteModal").innerHTML = text;
+    }
+    function StartVote()
+    {
+        socket.send(JSON.stringify({ Room: roomName, User: userName, Command: "StartVote", Value: "" }));
+    }
+    function Vote(input,button) {
+        if (IsVoteable) {
+            IsVoteable = false;
+            socket.send(JSON.stringify({ Room: roomName, User: userName, Command: "Vote", Value: input.toString(), UserKey: UserKey }));
+            button.classList.remove("btn-primary");
+            button.classList.add("btn-success");
+        }
+    }
+    var second = 9;
+    function timer()
+    {
+
+            setTimeout(function () {
+                if (second == 0) {
+                    RefreshUserList();
+                }
+                else {
+
+                    document.getElementById("informationBox").innerText = second;
+                    second--;
+                    timer();
+                }
+            }, 1000);
+
+
+    }
+</script>
+

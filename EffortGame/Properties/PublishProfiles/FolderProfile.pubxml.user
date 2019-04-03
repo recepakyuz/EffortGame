@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+Bu dosya, Web projenizin yayımlama/paket işlemi tarafından kullanılıyor. MSBuild dosyasını düzenleyerek
+bu işlemin davranışını düzenleyebilirsiniz. Bununla ilgili daha fazla bilgi edinmek için https://go.microsoft.com/fwlink/?LinkID=208121 adresini ziyaret edin. 
+-->
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <TimeStampOfAssociatedLegacyPublishXmlFile />
+    <_PublishTargetUrl>C:\effortnew</_PublishTargetUrl>
+  </PropertyGroup>
+</Project>
